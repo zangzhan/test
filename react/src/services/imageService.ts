@@ -1,5 +1,5 @@
-// 模拟图像生成服务
-// 在实际项目中，这里会调用真实的AI图像生成API
+// AI图像生成服务
+// 调用后端 Node.js 代理，转发到阿里云文生图API
 
 export interface ImageGenerationRequest {
   prompt: string
@@ -24,44 +24,53 @@ const stylePrompts = {
   minimalist: 'minimalist, simple, clean, modern'
 }
 
-// 模拟图像生成
+// 调用后端 API 生成图像
 export const generateImage = async (
   prompt: string, 
   style: string
-): Promise<ImageGenerationResponse> => {
-  // 模拟API调用延迟
-  await delay(2000 + Math.random() * 3000)
-  
-  // 使用Unsplash API获取随机图像作为演示
-  // 在实际项目中，这里会调用真实的AI图像生成API
-  const searchQuery = encodeURIComponent(prompt)
-  
+): Promise<{ taskId: string }> => {
   try {
-    // 这里使用Unsplash的随机图像API作为演示
-    // 在实际项目中，应该替换为真实的AI图像生成API
-    const response = await fetch(
-      `https://source.unsplash.com/random/512x512/?${searchQuery}`
-    )
+    const response = await fetch('http://localhost:3001/api/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, style }),
+    });
     
     if (!response.ok) {
-      throw new Error('Failed to generate image')
+      const errorData = await response.json().catch(() => ({ error: '网络错误' }));
+      throw new Error(errorData.error || '图片生成失败');
     }
     
-    // 获取图像URL
-    const imageUrl = response.url
+    const data = await response.json();
     
+    // 返回任务ID用于后续查询
     return {
-      url: imageUrl,
-      id: Date.now().toString()
-    }
+      taskId: data.taskId
+    };
   } catch (error) {
-    console.error('Image generation error:', error)
+    console.error('Image generation error:', error);
+    throw error;
+  }
+}
+
+// 查询任务状态
+export const checkTaskStatus = async (taskId: string) => {
+  try {
+    const response = await fetch('http://localhost:3001/api/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taskId }), // 修正参数名称
+    });
     
-    // 如果API调用失败，返回一个占位符图像
-    return {
-      url: `https://via.placeholder.com/512x512/6366f1/ffffff?text=${encodeURIComponent(prompt)}`,
-      id: Date.now().toString()
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: '网络错误' }));
+      throw new Error(errorData.error || '状态查询失败');
     }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Status check error:', error);
+    throw error;
   }
 }
 
@@ -117,4 +126,4 @@ export const generateImageWithRealAPI = async (
     console.error('Real API error:', error)
     throw error
   }
-} 
+}
