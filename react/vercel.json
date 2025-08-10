@@ -21,8 +21,6 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/dist/$1",
-      "status": 404,
       "dest": "/dist/index.html"
     }
   ],
