@@ -5,8 +5,16 @@ const router = require('express').Router();
 
 const ALIYUN_API_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis';
 const STATUS_API_URL = 'https://dashscope.aliyuncs.com/api/v1/tasks'; // 任务状态查询API
-const API_KEY = process.env.ALIYUN_API_KEY || 'sk-4ae06338bd6f4f958ad46a1c74f37e8f';
+const API_KEY = process.env.ALIYUN_API_KEY;
 
+// 检查API密钥是否存在
+if (!API_KEY) {
+  console.error('错误: 未设置ALIYUN_API_KEY环境变量');
+  // 创建一个中间件来拦截所有请求并返回错误
+  router.use((req, res) => {
+    res.status(500).json({ error: '服务器配置错误: 缺少API密钥' });
+  });
+} else {
 // 频率限制：每分钟最多10次生成请求
 const generateLimit = rateLimit({
   windowMs: 60 * 1000, // 1分钟
