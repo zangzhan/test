@@ -4,7 +4,7 @@ import { Wand2, Download, RefreshCw, Image as ImageIcon } from 'lucide-react'
 import PromptInput from './PromptInput'
 import ImageDisplay from './ImageDisplay'
 import StyleSelector from './StyleSelector'
-import { generateImage } from '../services/imageService'
+import { generateImage, checkTaskStatus } from '../services/imageService'
 
 export interface GeneratedImage {
   id: string
@@ -30,22 +30,49 @@ const ImageGenerator = () => {
     setIsGenerating(true)
     
     try {
-      const imageData = await generateImage(prompt, selectedStyle)
-      const newImage: GeneratedImage = {
-        id: Date.now().toString(),
-        url: imageData.url,
-        prompt,
-        style: selectedStyle,
-        timestamp: new Date()
+      // 1. 获取任务ID
+      const { taskId } = await generateImage(prompt, selectedStyle)
+      toast.success('图像生成任务已提交，正在处理...')
+      
+      // 2. 轮询任务状态
+      const pollStatus = async () => {
+        try {
+          const statusResponse = await checkTaskStatus(taskId)
+          
+          if (statusResponse.status === 'completed') {
+            // 任务完成，获取图像URL
+            const newImage: GeneratedImage = {
+              id: Date.now().toString(),
+              url: statusResponse.url,
+              prompt,
+              style: selectedStyle,
+              timestamp: new Date()
+            }
+            
+            setGeneratedImages(prev => [newImage, ...prev])
+            setCurrentImage(newImage)
+            toast.success('图像生成成功！')
+            setIsGenerating(false)
+          } else if (statusResponse.status === 'failed') {
+            // 任务失败
+            toast.error('图像生成失败: ' + (statusResponse.error || '未知错误'))
+            setIsGenerating(false)
+          } else {
+            // 任务仍在处理中，继续轮询
+            setTimeout(pollStatus, 3000) // 每3秒轮询一次
+          }
+        } catch (error) {
+          console.error('查询任务状态失败:', error)
+          toast.error('查询任务状态失败，请重试')
+          setIsGenerating(false)
+        }
       }
       
-      setGeneratedImages(prev => [newImage, ...prev])
-      setCurrentImage(newImage)
-      toast.success('图像生成成功！')
+      // 开始轮询
+      pollStatus()
     } catch (error) {
-      console.error('生成图像失败:', error)
-      toast.error('生成图像失败，请重试')
-    } finally {
+      console.error('提交图像生成任务失败:', error)
+      toast.error('提交图像生成任务失败，请重试')
       setIsGenerating(false)
     }
   }
@@ -181,4 +208,4 @@ const ImageGenerator = () => {
   )
 }
 
-export default ImageGenerator 
+export default ImageGenerator

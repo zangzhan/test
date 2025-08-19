@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import TextInput from "./TextInput";
 
 interface PromptInputProps {
@@ -12,7 +12,7 @@ interface PromptInputProps {
 
 const DEFAULT_MAX_LENGTH = 500;
 
-const PromptInput: React.FC<PromptInputProps> = ({
+const PromptInput: React.FC<PromptInputProps> = ({ 
   value,
   onChange,
   onSubmit,
@@ -20,7 +20,7 @@ const PromptInput: React.FC<PromptInputProps> = ({
   className = "",
   maxLength = DEFAULT_MAX_LENGTH,
 }) => {
-  const [touched, setTouched] = React.useState(false);
+  const [touched, setTouched] = useState(false);
   const length = value.length;
   const isEmpty = length === 0;
   const isTooLong = length > maxLength;
@@ -55,15 +55,15 @@ const PromptInput: React.FC<PromptInputProps> = ({
         maxLength={maxLength}
       />
       <div className="flex justify-between items-center mt-1 text-xs">
-        <span className={isTooLong ? "text-red-500" : "text-gray-400"}>
+        <span className={isTooLong ? "text-red-400" : "text-gray-500"}>
           {length}/{maxLength}
         </span>
-        {touched && isEmpty && <span className="text-red-500">提示词不能为空</span>}
-        {isTooLong && <span className="text-red-500">超出最大字数限制</span>}
+        {touched && isEmpty && <span className="text-red-400">提示词不能为空</span>}
+        {isTooLong && <span className="text-red-400">超出最大字数限制</span>}
       </div>
       <button
         type="submit"
-        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+        className="mt-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-blue-900/20 disabled:opacity-50"
         disabled={isInvalid}
       >
         生成
@@ -72,4 +72,4 @@ const PromptInput: React.FC<PromptInputProps> = ({
   );
 };
 
-export default PromptInput; 
+export default PromptInput;

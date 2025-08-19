@@ -11,9 +11,6 @@ export interface ImageGenerationResponse {
   id: string
 }
 
-// 模拟延迟
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
-
 // 风格提示词映射
 const stylePrompts = {
   realistic: 'realistic, high quality, detailed',
@@ -30,7 +27,7 @@ export const generateImage = async (
   style: string
 ): Promise<{ taskId: string }> => {
   try {
-    const response = await fetch('http://localhost:3001/api/generate-image', {
+    const response = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, style }),
@@ -56,10 +53,9 @@ export const generateImage = async (
 // 查询任务状态
 export const checkTaskStatus = async (taskId: string) => {
   try {
-    const response = await fetch('http://localhost:3001/api/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ taskId }), // 修正参数名称
+    const response = await fetch(`/api/task-status/${taskId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
     });
     
     if (!response.ok) {

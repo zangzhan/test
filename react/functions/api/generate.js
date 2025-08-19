@@ -68,7 +68,7 @@ router.post('/generate-image', async (req, res) => {
     
     // 准备请求参数
     requestData = {
-      model: 'wanx-v1',
+      model: 'wan2.2-t2i-plus',
       input: {
         prompt: prompt.trim(),
         style,

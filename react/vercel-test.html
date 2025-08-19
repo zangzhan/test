@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vercel API 测试</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+    .container { text-align: center; }
+    button { padding: 10px 20px; background-color: #0070f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin: 10px; }
+    button:hover { background-color: #0051a2; }
+    #result { margin-top: 20px; padding: 15px; background-color: #f5f5f5; border-radius: 4px; text-align: left; white-space: pre-wrap; }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Vercel API 连接测试</h1>
+    <button id="testVerifyApi">测试 API 密钥验证</button>
+    <button id="testGenerateApi">测试 生成图片 API</button>
+    <button id="testEnvApi">测试 环境变量 API</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const resultDiv = document.getElementById('result');
+    const apiBaseUrl = 'https://react-berryl-five-62.vercel.app/api';
+
+    // 测试函数
+    async function testApi(endpoint, method = 'GET', data = {}) {
+      try {
+        resultDiv.innerHTML = '正在请求...';
+        const url = `${apiBaseUrl}/${endpoint}`;
+        const options = {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        };
+
+        if (method === 'POST') {
+          options.body = JSON.stringify(data);
+        }
+
+        const response = await fetch(url, options);
+        const result = await response.json();
+
+        resultDiv.innerHTML = `状态码: ${response.status}\n\n响应内容:\n${JSON.stringify(result, null, 2)}`;
+
+        if (response.ok) {
+          resultDiv.classList.add('success');
+          resultDiv.classList.remove('error');
+        } else {
+          resultDiv.classList.add('error');
+          resultDiv.classList.remove('success');
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `请求失败: ${error.message}`;
+        resultDiv.classList.add('error');
+        resultDiv.classList.remove('success');
+      }
+    }
+
+    // 绑定按钮事件
+    document.getElementById('testVerifyApi').addEventListener('click', () => {
+      testApi('verify-api-key');
+    });
+
+    document.getElementById('testGenerateApi').addEventListener('click', () => {
+      testApi('generate', 'POST', {
+        prompt: '测试图片',
+        style: 'realistic'
+      });
+    });
+
+    document.getElementById('testEnvApi').addEventListener('click', () => {
+      testApi('env');
+    });
+  </script>
+</body>
+</html>

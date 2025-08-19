@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vercel 应用测试</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; } 
+    .container { text-align: center; } 
+    button { padding: 10px 20px; background-color: #0070f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin: 10px; } 
+    button:hover { background-color: #0051a2; } 
+    #result { margin-top: 20px; padding: 15px; background-color: #f5f5f5; border-radius: 4px; text-align: left; white-space: pre-wrap; } 
+    .success { color: green; } 
+    .error { color: red; } 
+    .info { color: blue; } 
+    .debug { font-family: monospace; font-size: 12px; background-color: #eee; padding: 10px; border-radius: 4px; margin-top: 10px; } 
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Vercel 应用测试</h1>
+    <p>此页面用于测试Vercel应用的可用性和API连接情况</p>
+    <button id="testHomepage">测试首页连接</button>
+    <button id="testVerifyApi">测试API密钥验证</button>
+    <button id="testGenerateApi">测试生成接口</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const resultDiv = document.getElementById('result');
+    const vercelAppUrl = 'https://react-berryl-five-62.vercel.app';
+
+    // 日志函数
+    function log(message, type = 'info') {
+      const logElement = document.createElement('div');
+      logElement.className = type;
+      logElement.textContent = message;
+      resultDiv.appendChild(logElement);
+    }
+
+    // 清除结果
+    function clearResult() {
+      resultDiv.innerHTML = '';
+      resultDiv.classList.remove('success', 'error', 'info');
+    }
+
+    // 测试首页连接
+    document.getElementById('testHomepage').addEventListener('click', async () => {
+      clearResult();
+      log('正在测试首页连接...');
+      try {
+        const startTime = performance.now();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        const response = await fetch(vercelAppUrl, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        const endTime = performance.now();
+        const responseTime = Math.round(endTime - startTime);
+
+        log(`测试结果:`, 'info');
+        log(`- 状态码: ${response.status}`);
+        log(`- 响应时间: ${responseTime}ms`);
+        log(`- URL: ${vercelAppUrl}`);
+
+        // 获取响应头信息
+        const headers = {};
+        response.headers.forEach((value, key) => {
+          headers[key] = value;
+        });
+        log('响应头信息:', 'info');
+        const headersDiv = document.createElement('div');
+        headersDiv.className = 'debug';
+        headersDiv.textContent = JSON.stringify(headers, null, 2);
+        resultDiv.appendChild(headersDiv);
+
+        if (response.ok) {
+          resultDiv.classList.add('success');
+          const text = await response.text();
+          log(`- 响应内容长度: ${text.length} 字符`);
+          log(`- 内容预览: ${text.substring(0, 200)}...`);
+        } else {
+          resultDiv.classList.add('error');
+        }
+      } catch (error) {
+        resultDiv.classList.add('error');
+        log(`测试失败:`, 'error');
+        log(`- 错误信息: ${error.message}`);
+        log(`- 错误类型: ${error.name}`);
+        log(`- URL: ${vercelAppUrl}`);
+        log('可能的原因:', 'info');
+        log('- 网络连接问题');
+        log('- Vercel应用未运行或部署失败');
+        log('- DNS解析问题');
+      }
+    });
+
+    // 测试API密钥验证
+    document.getElementById('testVerifyApi').addEventListener('click', async () => {
+      clearResult();
+      log('正在测试API密钥验证...');
+      try {
+        const startTime = performance.now();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        const response = await fetch(`${vercelAppUrl}/api/verify-api-key`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        const endTime = performance.now();
+        const responseTime = Math.round(endTime - startTime);
+        let data = null;
+
+        log(`测试结果:`, 'info');
+        log(`- 状态码: ${response.status}`);
+        log(`- 响应时间: ${responseTime}ms`);
+        log(`- URL: ${vercelAppUrl}/api/verify-api-key`);
+
+        try {
+          data = await response.json();
+          const dataDiv = document.createElement('div');
+          dataDiv.className = 'debug';
+          dataDiv.textContent = JSON.stringify(data, null, 2);
+          resultDiv.appendChild(dataDiv);
+        } catch (jsonError) {
+          log('JSON解析错误:', 'error');
+          log(`- 错误信息: ${jsonError.message}`);
+          log('响应文本:', 'info');
+          const text = await response.text();
+          const textDiv = document.createElement('div');
+          textDiv.className = 'debug';
+          textDiv.textContent = text;
+          resultDiv.appendChild(textDiv);
+        }
+
+        if (response.ok) {
+          resultDiv.classList.add('success');
+          if (data) {
+            log(`- API密钥状态: ${data.valid ? '有效' : '无效'}`);
+            if (data.apiKeyPrefix) log(`- API密钥前缀: ${data.apiKeyPrefix}`);
+            if (data.message) log(`- 消息: ${data.message}`);
+            if (data.env) log(`- 环境变量: ${JSON.stringify(data.env)}`);
+          }
+        } else {
+          resultDiv.classList.add('error');
+          if (data) {
+            log(`- 错误信息: ${data.error || '未知错误'}`);
+            if (data.detail) log(`- 详细信息: ${data.detail}`);
+            if (data.apiKeyPrefix) log(`- 使用的API密钥前缀: ${data.apiKeyPrefix}`);
+            if (data.env) log(`- 环境变量状态: ${JSON.stringify(data.env)}`);
+          }
+        }
+      } catch (error) {
+        resultDiv.classList.add('error');
+        log(`测试失败:`, 'error');
+        log(`- 错误信息: ${error.message}`);
+        log(`- 错误类型: ${error.name}`);
+        log(`- URL: ${vercelAppUrl}/api/verify-api-key`);
+        log('可能的原因:', 'info');
+        log('- 网络连接问题');
+        log('- Vercel应用未运行');
+        log('- API端点不存在');
+        log('- 服务器内部错误');
+      }
+    });
+
+    // 测试生成接口
+    document.getElementById('testGenerateApi').addEventListener('click', async () => {
+      clearResult();
+      log('正在测试生成接口...');
+      try {
+        const startTime = performance.now();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(`${vercelAppUrl}/api/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            prompt: '一朵红色的花',
+            style: 'realistic'
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        const endTime = performance.now();
+        const responseTime = Math.round(endTime - startTime);
+        let data = null;
+
+        log(`测试结果:`, 'info');
+        log(`- 状态码: ${response.status}`);
+        log(`- 响应时间: ${responseTime}ms`);
+        log(`- URL: ${vercelAppUrl}/api/generate`);
+
+        try {
+          data = await response.json();
+          const dataDiv = document.createElement('div');
+          dataDiv.className = 'debug';
+          dataDiv.textContent = JSON.stringify(data, null, 2);
+          resultDiv.appendChild(dataDiv);
+        } catch (jsonError) {
+          log('JSON解析错误:', 'error');
+          log(`- 错误信息: ${jsonError.message}`);
+          log('响应文本:', 'info');
+          const text = await response.text();
+          const textDiv = document.createElement('div');
+          textDiv.className = 'debug';
+          textDiv.textContent = text;
+          resultDiv.appendChild(textDiv);
+        }
+
+        if (response.ok) {
+          resultDiv.classList.add('success');
+          if (data) {
+            log(`- 任务ID: ${data.taskId || '未返回'}`);
+            log(`- 成功状态: ${data.success ? '是' : '否'}`);
+            if (data.message) log(`- 消息: ${data.message}`);
+          }
+        } else {
+          resultDiv.classList.add('error');
+          if (data) {
+            log(`- 错误信息: ${data.error || '未知错误'}`);
+            if (data.detail) log(`- 详细信息: ${data.detail}`);
+            if (data.apiKeyPrefix) log(`- 使用的API密钥前缀: ${data.apiKeyPrefix}`);
+            if (data.requestData) log(`- 请求参数: ${JSON.stringify(data.requestData)}`);
+          }
+        }
+      } catch (error) {
+        resultDiv.classList.add('error');
+        log(`测试失败:`, 'error');
+        log(`- 错误信息: ${error.message}`);
+        log(`- 错误类型: ${error.name}`);
+        log(`- URL: ${vercelAppUrl}/api/generate`);
+        log('可能的原因:', 'info');
+        log('- 网络连接问题');
+        log('- Vercel应用未运行');
+        log('- API端点不存在或格式错误');
+        log('- 服务器内部错误');
+        log('- 请求超时');
+      }
+    });
+  </script>
+</body>
+</html>
